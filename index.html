@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .register-container, .subscriptions-container, .payment-container {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .subscription-box button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #555;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .subscription-box button:hover {
+            background-color: #777;
+        }
+        input, select {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 200px;
+            border: none;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+        }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: #333 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="5" viewBox="0 0 10 5"><path fill="white" d="M0 0h10L5 5z"/></svg>') no-repeat right 10px center;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #555;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #777;
+        }
+        .error {
+            color: red;
+            display: none;
+        }
+        .subscriptions-container {
+            display: none;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+        .payment-container {
+            display: none;
+        }
+        .subscription-box {
+            background-color: #333;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .hidden {
+            display: none;
+        }
+        .apology {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .key-message {
+            color: #fff;
+            font-size: 14px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container" id="registerContainer">
+        <h2>Register</h2>
+        <input type="text" id="username" placeholder="Username" autocomplete="off">
+        <input type="password" id="password" placeholder="Password" autocomplete="off">
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" autocomplete="off">
+        <button onclick="register()">Register</button>
+        <p id="error" class="error"></p>
+    </div>
+
+    <div class="subscriptions-container hidden" id="subscriptionsContainer">
+        <div class="subscription-box">
+            <h3>14 Days</h3>
+            <button onclick="showPayment('14 Days', 3)">Select</button>
+        </div>
+        <div class="subscription-box">
+            <h3>1 Month</h3>
+            <button onclick="showPayment('1 Month', 4)">Select</button>
+        </div>
+        <div class="subscription-box">
+            <h3>3 Months</h3>
+            <button onclick="showPayment('3 Months', 8)">Select</button>
+        </div>
+    </div>
+
+    <div class="payment-container hidden" id="paymentContainer">
+        <h2>Choose Payment Method</h2>
+        <p id="productInfo"></p>
+        <select id="paymentMethod" onchange="showPaymentMethod()">
+            <option value="" disabled selected>Select Payment Method</option>
+            <option value="TF2 Keys">TF2 Keys - <span id="keyCount"></span> Keys</option>
+        </select>
+        <p id="keyMessage" class="key-message"></p>
+        <button onclick="confirmPayment()" id="confirmButton" disabled>Confirm Payment</button>
+        <p class="apology">Sorry, we don't support card payments yet.</p>
+    </div>
+
+    <script>
+        let currentUsername = '';
+        let selectedProduct = '';
+        let selectedKeys = 0;
+
+        function register() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const error = document.getElementById('error');
+
+            error.style.display = 'none';
+            error.textContent = '';
+
+            if (!username || !password || !confirmPassword) {
+                error.style.display = 'block';
+                error.textContent = 'Please fill all fields';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                error.style.display = 'block';
+                error.textContent = 'Passwords do not match';
+                return;
+            }
+
+            const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+            if (storedUsers.some(user => user.username.toLowerCase() === username.toLowerCase())) {
+                error.style.display = 'block';
+                error.textContent = 'Username already taken';
+                return;
+            }
+
+            storedUsers.push({ username: username, password: btoa(password) });
+            localStorage.setItem('users', JSON.stringify(storedUsers));
+
+            currentUsername = username;
+            document.getElementById('registerContainer').classList.add('hidden');
+            document.getElementById('subscriptionsContainer').style.display = 'flex';
+        }
+
+        function showPayment(product, keys) {
+            selectedProduct = product;
+            selectedKeys = keys;
+            document.getElementById('subscriptionsContainer').style.display = 'none';
+            document.getElementById('paymentContainer').style.display = 'block';
+            document.getElementById('productInfo').textContent = `Product: ${product}`;
+            document.getElementById('keyCount').textContent = keys;
+            document.getElementById('paymentMethod').value = '';
+            document.getElementById('keyMessage').style.display = 'none';
+            document.getElementById('confirmButton').disabled = true;
+        }
+
+        function showPaymentMethod() {
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const keyMessage = document.getElementById('keyMessage');
+            if (paymentMethod) {
+                document.getElementById('confirmButton').disabled = false;
+                keyMessage.style.display = 'block';
+                keyMessage.textContent = `You need to pay ${selectedKeys} TF2 Keys for ${selectedProduct}`;
+            } else {
+                document.getElementById('confirmButton').disabled = true;
+                keyMessage.style.display = 'none';
+            }
+        }
+
+        function confirmPayment() {
+            const paymentMethod = document.getElementById('paymentMethod').value;
+
+            const webhookUrl = 'https://discord.com/api/webhooks/1370716129517109351/q3LNc3EGYjvWBqaMgAEh23cyos-eiu6zwMHJ1QwGol_VSxka-pBsIOd4t9lwS3Wz1w1u';
+            const message = {
+                content: `User ${currentUsername} selected product: ${selectedProduct} (${selectedKeys} TF2 Keys) using payment method: ${paymentMethod}`
+            };
+
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(message)
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = 'https://discord.gg/udBXjcyH';
+                } else {
+                    console.error('Failed to send webhook');
+                }
+            }).catch(error => {
+                console.error('Error sending webhook:', error);
+            });
+        }
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                (e.ctrlKey && e.key === 'u')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
